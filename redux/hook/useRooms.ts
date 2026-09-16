@@ -10,40 +10,79 @@ import {
 import api from '@/services/apiClient';
 
 // Type for the booking payload
+export interface BookingRequestGuest {
+  BookingGuestID: number;
+  BookingRequestId: number;
+  GuestId: string;
+  CompanyId: string;
+  FullName: string;
+  Email: string;
+  Phone: string;
+  Age: number;
+  Address: string;
+  CountryId: string;
+  CountryName: string;
+  DivisionId: string;
+  DistrictId: string;
+  UpazilaId: string;
+  IsPrimary: boolean;
+  Nationality: string;
+  PassportOrID: string;
+  UserId: string;
+}
+
+export interface BookingRequestRoom {
+  RoomRequestID: number;
+  BookingRequestId: number;
+  RoomId: number;
+  CompanyId: string;
+  RoomType: string;
+  RoomTypeID: number;
+  RoomName: string;
+  RoomNumber: string;
+  NumberOfGuests: number;
+  ExtraBedNeeded: boolean;
+  SmokingPreference: boolean;
+  UserId: string;
+}
+
 export interface BookingRequestPayload {
   BookingRequest: {
     BookingRequestId: number;
+    CompanyId: string;
+
     CheckInDate: string;
     CheckOutDate: string;
+
     NumberOfRooms: number;
     NumberOfAdults: number;
     NumberOfChildren: number;
+
+    TotalAmount: number;
+
     SpecialRequests: string;
+
+    RejectedReason: string;
+    RejectionRemarks: string;
+    ApprovedRemarks: string;
+
+    RejectedBy: string;
+    ApprovedBy: string;
+
     Status: string;
-    CompanyId: string;
-    CreatedAt: string;
-    UpdatedAt: string;
+    UserId: string;
+
+    RejectedAt: string;
+    ApprovedAt: string;
+
+    RequestGuest: BookingRequestGuest;
+    BookingRequestRooms: BookingRequestRoom[];
   };
-  BookingRequestGuest: {
-    GuestId: number;
-    BookingRequestId: number;
-    FullName: string;
-    Email: string;
-    Phone: string;
-    Age: number;
-    IsPrimary: boolean;
-    Nationality: string;
-    PassportOrID: string;
-  };
-  BookingRequestRooms: Array<{
-    RoomRequestId: number;
-    BookingRequestId: number;
-    RoomType: string;
-    NumberOfGuests: number;
-    ExtraBedNeeded: boolean;
-    SmokingPreference: boolean;
-  }>;
+
+  BookingRequestGuest: BookingRequestGuest;
+  BookingRequestRooms: BookingRequestRoom[];
 }
+
 
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
@@ -75,22 +114,22 @@ export const useRooms = () => {
       );
     }
   };
-  
+
   const fetchRooms = useCallback(async () => {
-  try {
-    dispatch(setRoomsStart());
+    try {
+      dispatch(setRoomsStart());
 
-    const response = await api.get("/public/get-all-rooms");
+      const response = await api.get("/public/get-all-rooms");
 
-    dispatch(setRoomsSuccess(response.data));
-  } catch (err: any) {
-    dispatch(
-      setRoomsFailure(
-        err.response?.data?.message || err.message || "Something went wrong"
-      )
-    );
-  }
-}, [dispatch]);
+      dispatch(setRoomsSuccess(response.data));
+    } catch (err: any) {
+      dispatch(
+        setRoomsFailure(
+          err.response?.data?.message || err.message || "Something went wrong"
+        )
+      );
+    }
+  }, [dispatch]);
 
   return {
     rooms,

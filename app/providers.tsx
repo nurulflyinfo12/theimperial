@@ -2,7 +2,7 @@
 
 import { ThemeProvider } from "next-themes";
 import { Provider } from "react-redux";
-import { store } from "./redux/store";
+import { store } from "../redux/store";
 import { ReactNode } from "react";
 import AppInitializer from "./AppInitializer";
 

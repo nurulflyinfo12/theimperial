@@ -14,7 +14,7 @@ import {
 import { FaXTwitter } from "react-icons/fa6";
 import Image from "next/image";
 import Link from "next/link";
-import { useAppSelector } from "@/app/redux/hook/useApplicationDetails";
+import { useAppSelector } from "@/redux/hook/useApplicationDetails";
 
 const Footer = () => {
 

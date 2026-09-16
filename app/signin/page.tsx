@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiX } from "react-icons/fi";
 import Link from "next/link";
 import Image from "next/image";
-import { useAppSelector } from "@/app/redux/hook/useApplicationDetails";
+import { useAppSelector } from "@/redux/hook/useApplicationDetails";
 import { useRouter } from "next/navigation";
 
 export default function SignInPage() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useApplication } from "./redux/hook/useApplicationDetails";
+import { useApplication } from "../redux/hook/useApplicationDetails";
 
 export default function AppInitializer() {
   const { fetchApplication } = useApplication();

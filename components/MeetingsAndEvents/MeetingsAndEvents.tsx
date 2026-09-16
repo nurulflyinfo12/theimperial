@@ -5,8 +5,8 @@ import CallToAction from "../common/calltoaction";
 import ImageGalleryModal from "../common/ImageGalleryModal";
 import ImageCardSlider from "../common/ImageCardSlider";
 import PageHero from "../common/pagehero";
-import { useRooms } from "@/app/redux/hook/useRooms";
-import { useApplication } from "@/app/redux/hook/useApplicationDetails";
+import { useRooms } from "@/redux/hook/useRooms";
+import { useApplication } from "@/redux/hook/useApplicationDetails";
 
 export const Meetings = [
   {

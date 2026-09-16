@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   FiCheck,
   FiArrowLeft,
@@ -10,15 +10,21 @@ import {
 } from "react-icons/fi";
 import PageHero from "../common/pagehero";
 import BookingSearch from "./BookingSearch";
-import { useSearchRooms } from "@/app/redux/hook/useSearchRooms";
-import { BookingRequestPayload, useRooms } from "@/app/redux/hook/useRooms";
+import { useSearchRooms } from "@/redux/hook/useSearchRooms";
+import { BookingRequestPayload, useRooms } from "@/redux/hook/useRooms";
 import Step1RoomSelection from "./Step1RoomSelection";
 import Step2GuestDetails from "./Step2GuestDetails";
 import Step3BookingSummary from "./Step3BookingSummary";
+import { useApplication } from "@/redux/hook/useApplicationDetails";
+import { useAppSelector } from "@/redux/hook/useApplicationDetails";
+import LoginModal from "@/auth/LoginModal";
+import RegisterModal from "@/auth/RegisterModal";
 
 const BookingStepper = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
 
   const stepContentRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +36,10 @@ const BookingStepper = () => {
 
   const { results, loading, error, searchRooms } = useSearchRooms();
   const { createConfirmRoom } = useRooms();
+  const { application } = useApplication();
+
+  // Auth
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [searchData, setSearchData] = useState({
     location: "",
@@ -150,12 +160,6 @@ const BookingStepper = () => {
     if (!formData.firstName.trim()) errors.firstName = "First name is required";
     if (!formData.lastName.trim()) errors.lastName = "Last name is required";
 
-    // if (!formData.phone.trim()) {
-    //   errors.phone = "Phone number is required";
-    // } else if (!/^\d+$/.test(formData.phone.trim())) {
-    //   errors.phone = "Phone number must contain only digits (0-9)";
-    // }
-
     const phone = formData.phone.trim();
 
     if (!phone) {
@@ -193,7 +197,10 @@ const BookingStepper = () => {
 
     if (currentStep === 1 || targetStep > 2) {
       if (selectedItems.length !== searchData.rooms) {
-        showToast(`Please select exactly ${searchData.rooms} room(s) to continue.`, "info");
+        showToast(
+          `Please select exactly ${searchData.rooms} room(s) to continue.`,
+          "info"
+        );
         return;
       }
     }
@@ -206,51 +213,99 @@ const BookingStepper = () => {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
+
+    // ===== If not logged in → open Login Modal =====
+    if (!isAuthenticated) {
+      setShowLogin(true);
+      return;
+    }
+
+    console.log("submited room", selectedItems);
+    if (!selectedItems.length) {
+      showToast("Please select at least one room.", "error");
+      return;
+    }
+
+    if (!validateForm()) {
+      setCurrentStep(2);
+      return;
+    }
+
     setIsSubmitting(true);
+
+    const companyId = application?.CompanyID || "";
+
+    const guestFullName = `${formData.firstName} ${formData.lastName}`.trim();
+
+    const guestData = {
+      BookingGuestID: 0,
+      BookingRequestId: 0,
+      GuestId: "",
+      CompanyId: companyId,
+      FullName: guestFullName,
+      Email: formData.email,
+      Phone: formData.phone,
+      Age: 0,
+      Address: "",
+      CountryId: "",
+      CountryName: "",
+      DivisionId: "",
+      DistrictId: "",
+      UpazilaId: "",
+      IsPrimary: true,
+      Nationality: "",
+      PassportOrID: "",
+      UserId: "",
+    };
+
+    const roomData = selectedItems.map((room) => ({
+      RoomRequestID: 0,
+      BookingRequestId: 0,
+      RoomId: room.RoomId || 0,
+      CompanyId: companyId,
+      RoomType: room.RoomType?.TypeName || "",
+      RoomTypeID: room.RoomTypeID || room.RoomTypeId || 0,
+      RoomName: room.RoomName || "",
+      RoomNumber: room.RoomNumber || "",
+      NumberOfGuests: room.NumberOfGuests,
+      ExtraBedNeeded: false,
+      SmokingPreference: false,
+      UserId: "",
+    }));
 
     const finalPayload: BookingRequestPayload = {
       BookingRequest: {
         BookingRequestId: 0,
+        CompanyId: companyId,
         CheckInDate: new Date(searchData.checkIn).toISOString(),
         CheckOutDate: new Date(searchData.checkOut).toISOString(),
         NumberOfRooms: searchData.rooms,
         NumberOfAdults: Number(searchData.adults),
         NumberOfChildren: Number(searchData.children),
+        TotalAmount: totalPriceSum,
         SpecialRequests: formData.message || "",
+        RejectedReason: "",
+        RejectionRemarks: "",
+        ApprovedRemarks: "",
+        RejectedBy: "",
+        ApprovedBy: "",
         Status: "Pending",
-        CompanyId: "RRF-GUEST",
-        CreatedAt: new Date().toISOString(),
-        UpdatedAt: new Date().toISOString(),
+        UserId: "",
+        RejectedAt: new Date(0).toISOString(),
+        ApprovedAt: new Date(0).toISOString(),
+        RequestGuest: guestData,
+        BookingRequestRooms: roomData,
       },
-      BookingRequestGuest: {
-        GuestId: 0,
-        BookingRequestId: 0,
-        FullName: `${formData.firstName} ${formData.lastName}`,
-        Email: formData.email,
-        Phone: formData.phone,
-        Age: 0,
-        IsPrimary: true,
-        Nationality: "",
-        PassportOrID: "",
-      },
-      BookingRequestRooms: selectedItems.map((room) => ({
-        RoomRequestId: 0,
-        BookingRequestId: 0,
-        RoomType: room.RoomName || room.roomName || `Room ${room.RoomNumber || ""}`,
-        NumberOfGuests: room.MaxOccupancy || 2,
-        ExtraBedNeeded: false,
-        SmokingPreference: false,
-      })),
+      BookingRequestGuest: guestData,
+      BookingRequestRooms: roomData,
     };
+
+    console.log("Final Booking Payload:", finalPayload);
 
     try {
       await createConfirmRoom(finalPayload);
-      console.log("Successfully booking", finalPayload);
-
-      // const ref = `RRB-${Date.now().toString().slice(-8)}`;
-      // setBookingReference(ref);
+      console.log("Successfully booking:", finalPayload);
       setIsBookingSuccess(true);
-
       showToast("Booking request submitted successfully!", "success");
     } catch (err) {
       console.error("Booking error:", err);
@@ -260,11 +315,15 @@ const BookingStepper = () => {
     }
   };
 
-  const isRoomSelectionComplete = currentStep === 1 && selectedItems.length === searchData.rooms;
+  const isRoomSelectionComplete =
+    currentStep === 1 && selectedItems.length === searchData.rooms;
 
   return (
     <>
-      <PageHero title="Book Now" backgroundImage="/images/viproom/viproom.webp" />
+      <PageHero
+        title="Book Now"
+        backgroundImage="/images/viproom/viproom.webp"
+      />
 
       <BookingSearch
         searchData={searchData}
@@ -340,7 +399,10 @@ const BookingStepper = () => {
           </div>
 
           {/* Step Content */}
-          <div ref={stepContentRef} className="p-6 md:p-14 min-h-[520px] bg-background/40">
+          <div
+            ref={stepContentRef}
+            className="p-6 md:p-14 min-h-[520px] bg-background/40"
+          >
             <div className="max-w-6xl mx-auto">
               {currentStep === 1 && (
                 <Step1RoomSelection
@@ -427,7 +489,9 @@ const BookingStepper = () => {
               <FiCheck className="text-4xl" />
             </div>
 
-            <h2 className="text-2xl font-bold text-primary mb-2">Booking Confirmed!</h2>
+            <h2 className="text-2xl font-bold text-primary mb-2">
+              Booking Confirmed!
+            </h2>
             <p className="text-text-muted mb-6">
               Your booking has been successfully submitted.
             </p>
@@ -435,11 +499,15 @@ const BookingStepper = () => {
             <div className="bg-background/70 rounded-2xl p-5 text-left space-y-4 mb-8">
               <div className="flex justify-between text-sm">
                 <span className="text-text-muted">Booking Reference:</span>
-                <span className="font-mono font-bold text-primary">{bookingReference}</span>
+                <span className="font-mono font-bold text-primary">
+                  {bookingReference}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-text-muted">Guest Name:</span>
-                <span className="font-medium">{formData.firstName} {formData.lastName}</span>
+                <span className="font-medium">
+                  {formData.firstName} {formData.lastName}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-text-muted">Check-In Date:</span>
@@ -452,18 +520,24 @@ const BookingStepper = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-text-muted">Duration & Rooms:</span>
                 <span className="font-medium">
-                  {numberOfNights} Night{numberOfNights > 1 ? "s" : ""} • {searchData.rooms} Room{searchData.rooms > 1 ? "s" : ""}
+                  {numberOfNights} Night{numberOfNights > 1 ? "s" : ""} •{" "}
+                  {searchData.rooms} Room{searchData.rooms > 1 ? "s" : ""}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-text-muted">Total Amount:</span>
-                <span className="font-bold text-primary">BDT {totalPriceSum.toLocaleString()}</span>
+                <span className="font-bold text-primary">
+                  BDT {totalPriceSum.toLocaleString()}
+                </span>
               </div>
             </div>
 
             <div className="text-sm text-text-muted mb-6">
-              A confirmation email with all booking details has been sent to <br />
-              <span className="font-medium text-foreground">{formData.email}</span>
+              A confirmation email with all booking details has been sent to{" "}
+              <br />
+              <span className="font-medium text-foreground">
+                {formData.email}
+              </span>
             </div>
 
             <button
@@ -490,7 +564,9 @@ const BookingStepper = () => {
                 : "bg-card/95 border-border"
             }`}
         >
-          {toast.type === "error" && <FiAlertCircle className="text-xl shrink-0 text-accent" />}
+          {toast.type === "error" && (
+            <FiAlertCircle className="text-xl shrink-0 text-accent" />
+          )}
           {toast.type === "success" && (
             <FiCheck className="text-xl shrink-0 bg-foreground/20 p-0.5 rounded-full" />
           )}
@@ -505,6 +581,31 @@ const BookingStepper = () => {
           </button>
         </div>
       )}
+
+      {/* Auth Modals */}
+      {/* Auth Modals */}
+      <LoginModal
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+        onSwitchToRegister={() => {
+          setShowLogin(false);
+          setShowRegister(true);
+        }}
+        onSuccess={() => {
+          // Login successful → stay on Confirm Booking step
+          setShowLogin(false);
+          setCurrentStep(3);
+        }}
+      />
+
+      <RegisterModal
+        isOpen={showRegister}
+        onClose={() => setShowRegister(false)}
+        onSwitchToLogin={() => {
+          setShowRegister(false);
+          setShowLogin(true);
+        }}
+      />
     </>
   );
 };
