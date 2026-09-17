@@ -3,6 +3,7 @@ import roomsReducer from "./slice/roomsSlice";
 import applicationReducer from "./slice/applicationSlice"
 import loginRegisterReducer from "./slice/loginResigterSlice"
 import authReducer from "./slice/authSlice"
+import locationReducer from './slice/locationHierarchySlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     application: applicationReducer,
     loginRegister: loginRegisterReducer,
     auth: authReducer,
+    locations: locationReducer,
   },
 });
 

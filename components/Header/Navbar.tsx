@@ -9,9 +9,9 @@ import Link from "next/link";
 import { useAppSelector } from "@/redux/hook/useApplicationDetails";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
-import RegisterModal from "@/auth/RegisterModal";
-import LoginModal from "@/auth/LoginModal";
-import ProfileModal from "@/auth/ProfileModal"; // ← add this
+import RegisterModal from "@/components/auth/RegisterModal";
+import LoginModal from "@/components/auth/LoginModal";
+import ProfileModal from "@/components/auth/ProfileModal"; // ← add this
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);

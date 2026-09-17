@@ -120,13 +120,13 @@ export default function BannerSlider() {
             <span className="w-8 h-[1px] bg-gradient-to-l from-transparent to-white/40" />
           </div>
 
-          <h1 className="text-white text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-extralight tracking-[0.1em] mb-10 leading-tight bg-gradient-to-b from-white via-white to-white/80 bg-clip-text text-transparent drop-shadow-[0_10px_35px_rgba(0,0,0,0.6)] opacity-0 animate-fade-in-blur-2">
+          <h1 className="text-white text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif font-extralight tracking-[0.05em] mb-10 leading-tight bg-gradient-to-b from-white via-white to-white/80 bg-clip-text text-transparent drop-shadow-[0_10px_35px_rgba(0,0,0,0.6)] opacity-0 animate-fade-in-blur-2">
             {slides[currentIndex].subtitle}
           </h1>
 
           <div className="opacity-0 animate-fade-in-up-3">
             <Link href={slides[currentIndex].path}>
-              <button className="inline-flex items-center justify-center px-10 py-4 bg-gradient-to-b from-white/10 to-white/[0.02] hover:from-white hover:to-white border border-white/20 hover:border-white text-white hover:text-black font-serif font-medium text-xs sm:text-sm uppercase tracking-[0.3em] transition-all duration-500 rounded-none transform hover:scale-102 cursor-pointer shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+              <button className="inline-flex items-center justify-center px-6 py-4 bg-gradient-to-b from-white/10 to-white/[0.02] hover:from-white hover:to-white border border-white/20 hover:border-white text-white hover:text-black font-serif font-medium text-xs sm:text-sm uppercase tracking-[0.3em] transition-all duration-500 rounded-none transform hover:scale-102 cursor-pointer shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
                 <span className="inline-block pt-[1px]">
                   {slides[currentIndex].buttonText}
                 </span>

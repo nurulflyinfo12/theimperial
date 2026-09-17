@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   FiCheck,
   FiArrowLeft,
@@ -17,8 +17,9 @@ import Step2GuestDetails from "./Step2GuestDetails";
 import Step3BookingSummary from "./Step3BookingSummary";
 import { useApplication } from "@/redux/hook/useApplicationDetails";
 import { useAppSelector } from "@/redux/hook/useApplicationDetails";
-import LoginModal from "@/auth/LoginModal";
-import RegisterModal from "@/auth/RegisterModal";
+import LoginModal from "@/components/auth/LoginModal";
+import RegisterModal from "@/components/auth/RegisterModal";
+import { useLocationHierarchy } from "@/redux/hook/useLocationHierarchy";
 
 const BookingStepper = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -35,11 +36,12 @@ const BookingStepper = () => {
   }>({ message: "", visible: false, type: "info" });
 
   const { results, loading, error, searchRooms } = useSearchRooms();
+  const { countries, fetchLocationData } = useLocationHierarchy();
   const { createConfirmRoom } = useRooms();
   const { application } = useApplication();
 
   // Auth
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
   const [searchData, setSearchData] = useState({
     location: "",
@@ -58,6 +60,8 @@ const BookingStepper = () => {
     phone: "",
     email: "",
     message: "",
+    countryId: "",
+    address: "",
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -72,6 +76,10 @@ const BookingStepper = () => {
     setToast({ message, visible: true, type });
     setTimeout(() => setToast({ message: "", visible: false }), 2000);
   };
+
+  useEffect(() => {
+    fetchLocationData();
+  }, [])
 
   const handleSearchChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -148,7 +156,9 @@ const BookingStepper = () => {
   };
 
   const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -157,11 +167,11 @@ const BookingStepper = () => {
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
+
     if (!formData.firstName.trim()) errors.firstName = "First name is required";
     if (!formData.lastName.trim()) errors.lastName = "Last name is required";
 
     const phone = formData.phone.trim();
-
     if (!phone) {
       errors.phone = "Phone number is required";
     } else if (!/^\d+$/.test(phone)) {
@@ -175,6 +185,10 @@ const BookingStepper = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = "Invalid email format";
     }
+
+    // if (!formData.countryId) errors.countryId = "Country is required";   // ← new
+    if (!formData.address.trim()) errors.address = "Address is required"; // ← new
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -214,13 +228,12 @@ const BookingStepper = () => {
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    // ===== If not logged in → open Login Modal =====
+    // If not logged in → open Login Modal
     if (!isAuthenticated) {
       setShowLogin(true);
       return;
     }
 
-    console.log("submited room", selectedItems);
     if (!selectedItems.length) {
       showToast("Please select at least one room.", "error");
       return;
@@ -234,6 +247,7 @@ const BookingStepper = () => {
     setIsSubmitting(true);
 
     const companyId = application?.CompanyID || "";
+    const userId = user?.UserId || "";
 
     const guestFullName = `${formData.firstName} ${formData.lastName}`.trim();
 
@@ -246,16 +260,19 @@ const BookingStepper = () => {
       Email: formData.email,
       Phone: formData.phone,
       Age: 0,
-      Address: "",
-      CountryId: "",
-      CountryName: "",
+      Address: formData.address,
+      CountryId: formData.countryId,
+      CountryName: countries.find(
+        (c: any) =>
+          String(c.CountryCode) === String(formData.countryId)
+      )?.CountryName ?? "",
       DivisionId: "",
       DistrictId: "",
       UpazilaId: "",
       IsPrimary: true,
       Nationality: "",
       PassportOrID: "",
-      UserId: "",
+      UserId: userId,
     };
 
     const roomData = selectedItems.map((room) => ({
@@ -270,7 +287,7 @@ const BookingStepper = () => {
       NumberOfGuests: room.NumberOfGuests,
       ExtraBedNeeded: false,
       SmokingPreference: false,
-      UserId: "",
+      UserId: userId,
     }));
 
     const finalPayload: BookingRequestPayload = {
@@ -290,7 +307,7 @@ const BookingStepper = () => {
         RejectedBy: "",
         ApprovedBy: "",
         Status: "Pending",
-        UserId: "",
+        UserId: userId,
         RejectedAt: new Date(0).toISOString(),
         ApprovedAt: new Date(0).toISOString(),
         RequestGuest: guestData,
@@ -300,11 +317,10 @@ const BookingStepper = () => {
       BookingRequestRooms: roomData,
     };
 
-    console.log("Final Booking Payload:", finalPayload);
+    // console.log("Final Booking Payload:", finalPayload, user);
 
     try {
       await createConfirmRoom(finalPayload);
-      console.log("Successfully booking:", finalPayload);
       setIsBookingSuccess(true);
       showToast("Booking request submitted successfully!", "success");
     } catch (err) {
@@ -356,10 +372,10 @@ const BookingStepper = () => {
                   >
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center border-2 font-semibold text-sm transition-all duration-300 shadow-md ${currentStep === step
-                          ? "bg-primary text-background border-primary scale-110 ring-4 ring-primary/20"
-                          : currentStep > step
-                            ? "bg-secondary border-secondary text-foreground group-hover:opacity-80"
-                            : "bg-card border-border text-text-muted backdrop-blur-sm group-hover:border-primary/40"
+                        ? "bg-primary text-background border-primary scale-110 ring-4 ring-primary/20"
+                        : currentStep > step
+                          ? "bg-secondary border-secondary text-foreground group-hover:opacity-80"
+                          : "bg-card border-border text-text-muted backdrop-blur-sm group-hover:border-primary/40"
                         }`}
                     >
                       {currentStep > step ? (
@@ -370,8 +386,8 @@ const BookingStepper = () => {
                     </div>
                     <p
                       className={`text-xs mt-3 font-semibold tracking-wide uppercase transition-colors duration-200 ${currentStep === step
-                          ? "text-primary"
-                          : "text-text-muted group-hover:text-foreground"
+                        ? "text-primary"
+                        : "text-text-muted group-hover:text-foreground"
                         }`}
                     >
                       {step === 1 && "Select Rooms"}
@@ -426,6 +442,7 @@ const BookingStepper = () => {
                   formErrors={formErrors}
                   totalPriceSum={totalPriceSum}
                   numberOfNights={numberOfNights}
+                  countries={countries}     // ← new
                   onFormChange={handleFormChange}
                 />
               )}
@@ -435,6 +452,7 @@ const BookingStepper = () => {
                   selectedItems={selectedItems}
                   searchData={searchData}
                   formData={formData}
+                  countries={countries}  
                   totalPriceSum={totalPriceSum}
                   numberOfNights={numberOfNights}
                 />
@@ -558,10 +576,10 @@ const BookingStepper = () => {
       {toast.visible && (
         <div
           className={`fixed top-6 right-6 px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-3.5 z-[100] min-w-[340px] text-foreground border transition-all duration-300 backdrop-blur-md ${toast.type === "success"
-              ? "bg-secondary/95 border-secondary"
-              : toast.type === "error"
-                ? "bg-red-900/95 border-red-700"
-                : "bg-card/95 border-border"
+            ? "bg-secondary/95 border-secondary"
+            : toast.type === "error"
+              ? "bg-red-900/95 border-red-700"
+              : "bg-card/95 border-border"
             }`}
         >
           {toast.type === "error" && (

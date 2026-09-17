@@ -76,16 +76,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         }
 
         if (!formData.phone.trim()) {
-            errors.phone = "Phone number is required";
-        } else {
-            const cleanPhone = formData.phone.replace(/[\s\-()+. ]/g, "");
-            if (!/^\d+$/.test(cleanPhone)) {
-                errors.phone = "Phone number can only contain digits";
-            } else if (cleanPhone.length < 10) {
-                errors.phone = "Phone number must be at least 10 digits";
-            } else if (cleanPhone.length > 15) {
-                errors.phone = "Phone number cannot exceed 15 digits";
-            }
+          errors.phone = "Phone number is required";
+        } else if (!/^\d+$/.test(formData.phone.trim())) {
+          errors.phone = "Phone number can only contain digits";
+        } else if (formData.phone.trim().length !== 11) {
+          errors.phone = "Phone number must be exactly 11 digits";
         }
 
         if (!formData.password) {
@@ -115,16 +110,23 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     };
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { value } = e.target;
-        const formattedValue = value.replace(/[^0-9+\s\-()+. ]/g, "");
-        setFormData((prev) => ({ ...prev, phone: formattedValue }));
-        if (formErrors.phone) {
-            setFormErrors((prev) => ({ ...prev, phone: "" }));
-        }
-        if (showSuccess) {
-            setShowSuccess(false);
-            setSuccessMessage("");
-        }
+      const { value } = e.target;
+        
+      // Keep only digits
+      const digitsOnly = value.replace(/\D/g, "");
+        
+      // Max 11 digits
+      const limitedValue = digitsOnly.slice(0, 11);
+        
+      setFormData((prev) => ({ ...prev, phone: limitedValue }));
+        
+      if (formErrors.phone) {
+        setFormErrors((prev) => ({ ...prev, phone: "" }));
+      }
+      if (showSuccess) {
+        setShowSuccess(false);
+        setSuccessMessage("");
+      }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -199,9 +201,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                         <h3 className="text-xl font-medium tracking-wider text-white">
                             Create Account
                         </h3>
-                        <p className="text-[#D4AF37] text-xs mt-1 font-light tracking-widest">
-                            Join us for a premium experience
-                        </p>
                     </div>
                     <button
                         onClick={onClose}
@@ -335,6 +334,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                     type="tel"
                                     name="phone"
                                     value={formData.phone}
+                                    maxLength={11}
                                     onChange={handlePhoneChange}
                                     placeholder="01712345678"
                                     className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-all text-neutral-900 placeholder:text-neutral-400 ${formErrors.firstName
@@ -373,7 +373,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-3 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors"
+                                    className="absolute inset-y-0 right-3 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                                     disabled={registerLoading || showSuccess}
                                 >
                                     {showPassword ? (
@@ -422,7 +422,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                             <button
                                 type="submit"
                                 disabled={registerLoading}
-                                className="w-full bg-[#0A2F1F] text-white py-3.5 rounded-xl font-medium text-sm tracking-widest uppercase transition-all duration-200 hover:bg-[#0A2F1F]/90 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-2"
+                                className="w-full bg-[#0A2F1F] text-white py-3.5 rounded-xl font-medium text-sm tracking-widest uppercase transition-all duration-200 hover:bg-[#0A2F1F]/90 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-2 cursor-pointer"
                             >
                                 {registerLoading ? (
                                     <>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { FiLoader, FiInfo, FiLayers, FiX, FiAward, FiEye, FiArrowRight } from "react-icons/fi";
 import { MdOutlineAirlineSeatIndividualSuite, MdAcUnit } from "react-icons/md";
+import { useApplication } from "@/redux/hook/useApplicationDetails";
 
 interface Step1Props {
   results: any[];
@@ -29,6 +30,7 @@ const Step1RoomSelection: React.FC<Step1Props> = ({
   isSelectionComplete = false
 }) => {
   const [activeModalRoom, setActiveModalRoom] = useState<any | null>(null);
+  const { application } = useApplication();
 
   useEffect(() => {
     if (activeModalRoom) {
@@ -94,7 +96,7 @@ const Step1RoomSelection: React.FC<Step1Props> = ({
                 <div>
                   <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-hidden bg-background">
                     <Image 
-                      src={room.RoomImage || room.coverImage || "/images/viproom/viproom.webp"} 
+                      src={room.RoomImage || "/images/imperiallogo.png"} 
                       alt={room.RoomName || "Hotel Room"} 
                       fill 
                       className="object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -174,7 +176,7 @@ const Step1RoomSelection: React.FC<Step1Props> = ({
                     <button
                       type="button"
                       onClick={() => onItemToggle(room)}
-                      className="w-full py-4 font-bold text-xs md:text-sm uppercase tracking-widest transition-all duration-200 active:scale-[0.99] rounded-xl border bg-background text-foreground border-border hover:bg-card hover:border-primary hover:text-primary shadow-sm"
+                      className="w-full py-4 font-bold text-xs md:text-sm uppercase tracking-widest transition-all duration-200 active:scale-[0.99] rounded-xl border bg-background text-foreground border-border hover:bg-card hover:border-primary hover:text-primary shadow-sm cursor-pointer"
                     >
                       Book This Accommodation
                     </button>
@@ -201,7 +203,7 @@ const Step1RoomSelection: React.FC<Step1Props> = ({
             {/* Modal Hero */}
             <div className="relative h-56 sm:h-64 w-full bg-background shrink-0">
               <Image
-                src={activeModalRoom.RoomImage || activeModalRoom.coverImage || "/images/viproom/viproom.webp"}
+                src={activeModalRoom.RoomImage || activeModalRoom.coverImage || application?.Logo}
                 alt={activeModalRoom.RoomName || "Accommodation Detail"}
                 fill
                 className="object-cover"

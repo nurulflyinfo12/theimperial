@@ -75,6 +75,34 @@ const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLocalError("");
+
+  //   if (!validateForm()) {
+  //     return;
+  //   }
+
+  //   try {
+  //     await createLogin({
+  //       Username: formData.email.trim(),
+  //       Password: formData.password,
+  //     });
+
+  //     // Success
+  //     onClose();
+  //     setFormData({ email: "", password: "" });
+
+  //     // If onSuccess is provided (from BookingStepper) → call it
+  //     // Otherwise just stay on the current page (no redirect)
+  //     if (onSuccess) {
+  //       onSuccess();
+  //     }
+  //   } catch (err: any) {
+  //     setLocalError(err?.message || "Login failed. Please try again.");
+  //   }
+  // };
+
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLocalError("");
@@ -88,20 +116,50 @@ const LoginModal: React.FC<LoginModalProps> = ({
       Username: formData.email.trim(),
       Password: formData.password,
     });
-
     // Success
     onClose();
     setFormData({ email: "", password: "" });
 
-    // If onSuccess is provided (from BookingStepper) → call it
-    // Otherwise just stay on the current page (no redirect)
     if (onSuccess) {
       onSuccess();
     }
   } catch (err: any) {
-    setLocalError(err?.message || "Login failed. Please try again.");
+    // Get message from API
+    const apiMessage =  
+      err?.response?.data?.message ||
+      err?.response?.data?.Message ||
+      err?.message ||
+      "";
+
+    const lowerMsg = apiMessage.toLowerCase();
+
+    // Username incorrect / user not found → ask to register
+    if (
+      lowerMsg.includes("not found") ||
+      lowerMsg.includes("user does not exist") ||
+      lowerMsg.includes("no user") ||
+      lowerMsg.includes("invalid username") ||
+      lowerMsg.includes("email not found") ||
+      lowerMsg.includes("username not found")
+    ) {
+      setLocalError("Username is incorrect. Please register first.");
+    }
+    // Password wrong
+    else if (
+      lowerMsg.includes("password") ||
+      lowerMsg.includes("invalid credential") ||
+      lowerMsg.includes("wrong password") ||
+      lowerMsg.includes("incorrect password")
+    ) {
+      setLocalError("Password is wrong.");
+    }
+    // Fallback
+    else {
+      setLocalError(apiMessage || "Login failed. Please try again.");
+    }
   }
 };
+
   if (!isOpen) return null;
 
   return (
@@ -156,11 +214,10 @@ const LoginModal: React.FC<LoginModalProps> = ({
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-all text-neutral-900 placeholder:text-neutral-400 ${
-                    formErrors.email
+                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-all text-neutral-900 placeholder:text-neutral-400 ${formErrors.email
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                       : "border-neutral-200 focus:border-[#0A2F1F] focus:ring-[#0A2F1F]/20"
-                  }`}
+                    }`}
                   disabled={loginLoading}
                 />
               </div>
@@ -184,17 +241,16 @@ const LoginModal: React.FC<LoginModalProps> = ({
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-all text-neutral-900 placeholder:text-neutral-400 ${
-                    formErrors.password
+                  className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-all text-neutral-900 placeholder:text-neutral-400 ${formErrors.password
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                       : "border-neutral-200 focus:border-[#0A2F1F] focus:ring-[#0A2F1F]/20"
-                  }`}
+                    }`}
                   disabled={loginLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-3 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="absolute inset-y-0 right-3 flex items-center text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                   disabled={loginLoading}
                 >
                   {showPassword ? (
@@ -215,7 +271,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full bg-[#0A2F1F] text-white py-3.5 rounded-xl font-medium text-sm tracking-widest uppercase transition-all duration-200 hover:bg-[#0A2F1F]/90 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-2"
+              className="w-full bg-[#0A2F1F] text-white py-3.5 rounded-xl font-medium text-sm tracking-widest uppercase transition-all duration-200 hover:bg-[#0A2F1F]/90 active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 mt-2 cursor-pointer"
             >
               {loginLoading ? (
                 <>
@@ -240,7 +296,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
                   onClose();
                   onSwitchToRegister();
                 }}
-                className="text-[#0A2F1F] font-bold hover:text-[#D4AF37] transition-colors"
+                className="text-[#0A2F1F] font-bold hover:text-[#D4AF37] transition-colors cursor-pointer"
               >
                 Create Account
               </button>
