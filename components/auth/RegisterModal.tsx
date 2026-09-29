@@ -451,7 +451,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                                         onClose();
                                         onSwitchToLogin();
                                     }}
-                                    className="text-[#0A2F1F] font-bold hover:text-[#D4AF37] transition-colors"
+                                    className="text-[#0A2F1F] font-bold hover:text-[#D4AF37] transition-colors cursor-pointer"
                                 >
                                     Sign In
                                 </button>

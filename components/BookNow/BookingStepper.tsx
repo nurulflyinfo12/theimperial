@@ -186,8 +186,8 @@ const BookingStepper = () => {
       errors.email = "Invalid email format";
     }
 
-    // if (!formData.countryId) errors.countryId = "Country is required";   // ← new
-    if (!formData.address.trim()) errors.address = "Address is required"; // ← new
+    if (!formData.countryId) errors.countryId = "Country is required";
+    if (!formData.address.trim()) errors.address = "Address is required";
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -452,7 +452,7 @@ const BookingStepper = () => {
                   selectedItems={selectedItems}
                   searchData={searchData}
                   formData={formData}
-                  countries={countries}  
+                  countries={countries}
                   totalPriceSum={totalPriceSum}
                   numberOfNights={numberOfNights}
                 />
@@ -600,7 +600,126 @@ const BookingStepper = () => {
         </div>
       )}
 
-      {/* Auth Modals */}
+      {/* Fixed Selected Rooms Toast — responsive for all devices */}
+{currentStep === 1 && selectedItems.length > 0 && (
+  <div
+    className="
+      fixed z-[90]
+      /* Mobile: bottom full-width bar */
+      bottom-0 left-0 right-0
+      /* sm+: floating card bottom-right */
+      sm:bottom-6 sm:left-auto sm:right-6 sm:w-[300px] sm:max-w-[calc(100vw-2rem)]
+      /* lg+: top-right like before */
+      lg:top-36 lg:bottom-auto
+    "
+  >
+    <div
+      className="
+        bg-card border border-border
+        shadow-[0_20px_50px_rgba(0,0,0,0.4)]
+        overflow-hidden backdrop-blur-md
+        /* Mobile: rounded top only */
+        rounded-t-2xl
+        sm:rounded-2xl
+        /* Safe area for iPhone home indicator */
+        pb-[env(safe-area-inset-bottom)]
+      "
+    >
+      {/* Header */}
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border flex items-center justify-between bg-background/80">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary truncate">
+            Selected Rooms
+          </span>
+          <span className="text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full font-bold shrink-0">
+            {selectedItems.length}/{searchData.rooms}
+          </span>
+        </div>
+        {selectedItems.length === searchData.rooms && (
+          <button
+            type="button"
+            onClick={nextStep}
+            className="text-[10px] font-bold uppercase tracking-wider bg-primary text-background px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-primary-dark transition-colors shrink-0 ml-2"
+          >
+            Next →
+          </button>
+        )}
+      </div>
+
+      {/* Room list — horizontal scroll on mobile, vertical on larger */}
+      <div
+        className="
+          p-2.5 sm:p-3
+          flex sm:flex-col gap-2.5
+          overflow-x-auto sm:overflow-x-visible sm:overflow-y-auto
+          max-h-none sm:max-h-[340px]
+          snap-x sm:snap-none
+        "
+      >
+        {selectedItems.map((room, idx) => (
+          <div
+            key={room.RoomId}
+            className="
+              relative flex gap-2.5 sm:gap-3
+              rounded-xl overflow-hidden border border-border bg-background/60
+              /* Mobile: fixed card width for horizontal scroll */
+              min-w-[220px] sm:min-w-0 w-[220px] sm:w-auto
+              shrink-0 sm:shrink
+              snap-start
+            "
+          >
+            {/* Thumbnail */}
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0">
+              <img
+                src={room.RoomImage || "/images/imperiallogo.png"}
+                alt={room.RoomName || "Room"}
+                className="w-full h-full object-cover"
+              />
+              <span className="absolute top-1 left-1 bg-primary text-background text-[9px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center">
+                {idx + 1}
+              </span>
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0 py-1.5 sm:py-2 pr-7 sm:pr-8 flex flex-col justify-center">
+              <p className="text-[11px] sm:text-xs font-bold text-foreground truncate leading-tight">
+                {room.RoomName || `Room ${room.RoomNumber}`}
+              </p>
+              <p className="text-[10px] text-primary font-semibold mt-0.5">
+                BDT {(room.PricePerNight || 3500).toLocaleString()} / night
+              </p>
+            </div>
+
+            {/* Remove button */}
+            <button
+              type="button"
+              onClick={() => handleItemToggle(room)}
+              className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow-sm"
+              title="Remove room"
+              aria-label="Remove room"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
       {/* Auth Modals */}
       <LoginModal
         isOpen={showLogin}
