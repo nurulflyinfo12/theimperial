@@ -37,8 +37,30 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
     const [childrenAges, setChildrenAges] = useState<number[]>([]);
 
     const guestSectionRef = useRef<HTMLDivElement>(null);
+    const hasInitialSearched = useRef(false);
 
-    // Close dropdown when clicking outside
+    // ─── Auto-fill default dates (only once) ───────────────────────────────
+    useEffect(() => {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const todayStr = today.toISOString().split("T")[0];
+        const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+        if (!searchData.checkIn) {
+            handleSearchChange({
+                target: { name: "checkIn", value: todayStr },
+            } as React.ChangeEvent<HTMLInputElement>);
+        }
+        if (!searchData.checkOut) {
+            handleSearchChange({
+                target: { name: "checkOut", value: tomorrowStr },
+            } as React.ChangeEvent<HTMLInputElement>);
+        }
+    }, []); // run only on mount
+
+    // ─── Close dropdown on outside click ───────────────────────────────────
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -52,27 +74,20 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Sync with parent when dropdown is opened
+    // ─── Sync local guest state when dropdown opens ────────────────────────
     useEffect(() => {
         if (showGuestDropdown) {
             setRooms(Number(searchData.rooms) || 1);
             setAdults(Number(searchData.adults) || 1);
             setChildren(Number(searchData.children) || 0);
             setChildrenAges(searchData.childrenAges || []);
-            // Re-validate ages when dropdown opens
-            setTimeout(() => {
-                validateChildrenAges();
-            }, 10);
+            setTimeout(() => validateChildrenAges(), 10);
         }
-    }, [showGuestDropdown, searchData]);
+    }, [showGuestDropdown]);
 
+    // ─── Push guest values to parent ───────────────────────────────────────
     const updateParentGuests = () => {
-        onGuestChange?.({
-            rooms,
-            adults,
-            children,
-            childrenAges,
-        });
+        onGuestChange?.({ rooms, adults, children, childrenAges });
     };
 
     useEffect(() => {
@@ -81,19 +96,34 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
         }
     }, [showGuestDropdown, rooms, adults, children, childrenAges]);
 
-    // Validate Children Ages
+    // ─── Initial search with default values (once) ─────────────────────────
+    useEffect(() => {
+        if (
+            !hasInitialSearched.current &&
+            searchData.checkIn &&
+            searchData.checkOut
+        ) {
+            hasInitialSearched.current = true;
+            // small delay so parent state is ready
+            const t = setTimeout(() => {
+                updateParentGuests();
+                onSearchClick();
+            }, 50);
+            return () => clearTimeout(t);
+        }
+    }, [searchData.checkIn, searchData.checkOut]);
+
+    // ─── Validation helpers ────────────────────────────────────────────────
     const validateChildrenAges = (): boolean => {
         if (children === 0) {
             setAgeError("");
             return true;
         }
-
-        const hasUnselectedAge = childrenAges.some(age => age === 0);
+        const hasUnselectedAge = childrenAges.some((age) => age === 0);
         if (hasUnselectedAge) {
             setAgeError("Please select age for all children");
             return false;
         }
-
         setAgeError("");
         return true;
     };
@@ -126,10 +156,10 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
         return isValid;
     };
 
-    // Main search handler
+    // ─── Search handler (used by both buttons) ─────────────────────────────
     const handleSearch = () => {
         const datesValid = validateDates();
-        let agesValid = validateChildrenAges();
+        const agesValid = validateChildrenAges();
 
         if (!agesValid) {
             setShowGuestDropdown(true);
@@ -143,26 +173,9 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
         }
     };
 
-    // Auto-fill dates
-    useEffect(() => {
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const todayStr = today.toISOString().split("T")[0];
-        const tomorrowStr = tomorrow.toISOString().split("T")[0];
-
-        if (!searchData.checkIn) {
-            handleSearchChange({ target: { name: "checkIn", value: todayStr } } as React.ChangeEvent<HTMLInputElement>);
-        }
-        if (!searchData.checkOut) {
-            handleSearchChange({ target: { name: "checkOut", value: tomorrowStr } } as React.ChangeEvent<HTMLInputElement>);
-        }
-    }, [searchData.checkIn, searchData.checkOut, handleSearchChange]);
-
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         handleSearchChange(e);
-        setErrors(prev => ({ ...prev, [e.target.name]: "" }));
+        setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
     };
 
     useEffect(() => {
@@ -172,13 +185,16 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
     }, [searchData.checkIn, searchData.checkOut]);
 
     const openDatePicker = (name: string) => {
-        const input = document.querySelector(`input[name="${name}"]`) as HTMLInputElement;
+        const input = document.querySelector(
+            `input[name="${name}"]`
+        ) as HTMLInputElement;
         if (input) {
             input.focus();
             input.showPicker?.();
         }
     };
 
+    // ─── Counter helpers ───────────────────────────────────────────────────
     const increaseRooms = () => {
         const newRooms = rooms + 1;
         setRooms(newRooms);
@@ -192,7 +208,7 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
             const maxChildren = newRooms * 2;
             if (children > maxChildren) {
                 setChildren(maxChildren);
-                setChildrenAges(prev => prev.slice(0, maxChildren));
+                setChildrenAges((prev) => prev.slice(0, maxChildren));
             }
         }
     };
@@ -205,18 +221,17 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
     const increaseChildren = () => {
         const maxChildren = rooms * 2;
         if (children < maxChildren) {
-            setChildren(prev => prev + 1);
-            setChildrenAges(prev => [...prev, 0]);
+            setChildren((prev) => prev + 1);
+            setChildrenAges((prev) => [...prev, 0]);
         }
     };
 
     const decreaseChildren = () => {
         if (children > 0) {
-            setChildren(prev => prev - 1);
-            setChildrenAges(prev => prev.slice(0, -1));
+            setChildren((prev) => prev - 1);
+            setChildrenAges((prev) => prev.slice(0, -1));
         }
     };
-
     return (
         <section className="-mt-20 relative z-30">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -347,8 +362,8 @@ const BookingSearch: React.FC<BookingSearchProps> = ({
                                                 </div>
                                             )}
 
-                                            <button 
-                                                onClick={handleSearch} 
+                                            <button
+                                                onClick={handleSearch}
                                                 className="w-full py-3 text-sm font-bold tracking-wider uppercase rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg hover:shadow-blue-500/40 active:scale-[0.98] transition-all"
                                             >
                                                 Search Properties
