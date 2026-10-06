@@ -80,7 +80,7 @@ export default function Navbar() {
       <header
         className={`fixed top-11 lg:top-0 left-0 w-full z-40 transition-all duration-300 backdrop-blur-sm ${
           scrolled
-            ? "bg-white/85 dark:bg-white/100 backdrop-blur-md text-secondary dark:text-secondary shadow-[0px_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0px_4px_20px_rgba(0,0,0,0.4)]"
+            ? "bg-white/85 dark:bg-white/85 backdrop-blur-md text-secondary dark:text-secondary shadow-[0px_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0px_4px_20px_rgba(0,0,0,0.4)]"
             : "bg-white/85 dark:bg-white/90 backdrop-blur-md text-secondary dark:text-black shadow-[0px_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0px_4px_20px_rgba(0,0,0,0.4)]"
         }`}
       >
